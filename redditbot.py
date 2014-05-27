@@ -1,4 +1,5 @@
 import requests
+import json
 from time import sleep
 from throttle import Throttle
 
@@ -68,10 +69,10 @@ class Bot(object):
             else:
                 print('fullname not in list')
                 if self.throttle.request_allowed():
-                    self.post_comment(fullname, '### SLEEPY EYES ###')
+                    self.post_comment(fullname, '### BONY KNEES ###')
 
                     # only add fullname to fullname file if not affected by ratelimit
-                    if 'ratelimit' not in self.comment_response.content.json()['json']:
+                    if 'ratelimit' not in json.loads(self.comment_response.content.decode('utf8'))['json']:
                         self.add_fullname_to_old_fullnames_file(fullname)
                     sleep(1)
                 else:

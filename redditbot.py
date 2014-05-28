@@ -31,7 +31,7 @@ class Bot(object):
             login_response = self.client.post('http://www.reddit.com/api/login', data=self.user_cred_dict)
             print('Logged in')
         else:
-            self.login()
+            return
 
         # set modhash as header
         self.client.headers['X-Modhash'] = login_response.json()['json']['data']['modhash']
@@ -43,7 +43,6 @@ class Bot(object):
         # only continue if response is good
         if self.comment_response.status_code != 200:
             self.post_comment(thing_id, text)
-        print('comment posted')
 
     def get_new_links(self):
         """Gets the 25 newest links in specified subreddit and creates a lists of link fullnames"""
@@ -52,7 +51,7 @@ class Bot(object):
         if self.throttle.request_allowed():
             new_links = self.client.get(self.subreddit + 'new.json', data=request_data).json()['data']['children']
         else:
-            self.get_new_links()
+            return
         self.updated_fullnames = []
         for new_link_info_list in new_links:
             self.updated_fullnames.append((new_link_info_list['data']['name']))
@@ -69,14 +68,19 @@ class Bot(object):
             else:
                 print('fullname not in list')
                 if self.throttle.request_allowed():
-                    self.post_comment(fullname, '### BONY KNEES ###')
+                    self.post_comment(fullname, '**This thread could use a dose of The Cage \n'
+                                                '[All hail The Cage](http://i.imgur.com/EXikTLC.png)**')
 
                     # only add fullname to fullname file if not affected by ratelimit
                     if 'ratelimit' not in json.loads(self.comment_response.content.decode('utf8'))['json']:
                         self.add_fullname_to_old_fullnames_file(fullname)
-                    sleep(1)
+                        print('comment posted')
+                        sleep(1)
+                    else:
+                        print('ratelimit')
+                        sleep(1)
                 else:
-                    self.get_new_links()
+                    return
 
     def add_fullname_to_old_fullnames_file(self, fullname):
         """Prints link fullnames of current loop cycle to a file"""
@@ -89,6 +93,6 @@ request_limit = 30
 throttle = Throttle(request_limit, 60)
 
 while True:
-    bot = Bot(throttle, "itg_probot", "itg_probot")
+    bot = Bot(throttle, "cage_bot", "cage_bot")
     bot.login()
     bot.get_new_links()

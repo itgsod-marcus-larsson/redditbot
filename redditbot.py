@@ -7,7 +7,7 @@ from throttle import Throttle
 class Bot(object):
 
     def __init__(self, throttle, username, password):
-        self.subreddit = 'http://www.reddit.com/r/probot2k14/'
+        self.subreddit = 'http://www.reddit.com/r/movies/'
         self.throttle = throttle
         self.username = username
         self.password = password
@@ -16,6 +16,7 @@ class Bot(object):
         self.client = requests.session()
         self.client.headers = self.headers
         self.updated_fullnames = []
+        self.link_titles = []
         self.old_fullnames = self.read_old_fullnames()
 
     def read_old_fullnames(self):
@@ -55,6 +56,7 @@ class Bot(object):
         self.updated_fullnames = []
         for new_link_info_list in new_links:
             self.updated_fullnames.append((new_link_info_list['data']['name']))
+            self.link_titles.append((new_link_info_list['data']['title']))
         self.compare_fullnames()
 
     def compare_fullnames(self):
@@ -64,26 +66,31 @@ class Bot(object):
         for fullname in self.updated_fullnames:
             if fullname + '\n' in self.old_fullnames:
                 print('fullname already in list')
-                sleep(1)
+                sleep(2)
             else:
                 print('fullname not in list')
                 if self.throttle.request_allowed():
-                    self.post_comment(fullname, '**This thread could use a dose of The Cage \n'
-                                                '[All hail The Cage](http://i.imgur.com/EXikTLC.png)**')
+                    current_link_title = self.link_titles[self.updated_fullnames.index(fullname)]
+                    if 'nicolas cage' in current_link_title:
+                        self.post_comment(fullname, '**This thread could use a dose of The Cage \n [All hail The Cage](http://i.imgur.com/EXikTLC.png)**')
 
-                    # only add fullname to fullname file if not affected by ratelimit
-                    if 'ratelimit' not in json.loads(self.comment_response.content.decode('utf8'))['json']:
-                        self.add_fullname_to_old_fullnames_file(fullname)
-                        print('comment posted')
-                        sleep(1)
+                        # only add fullname to fullname file if not affected by ratelimit
+                        if 'ratelimit' not in json.loads(self.comment_response.content.decode('utf8'))['json']:
+                            self.add_fullname_to_old_fullnames_file(fullname)
+                            print('comment posted')
+                            sleep(2)
+                        else:
+                            print('ratelimit')
+                            sleep(2)
                     else:
-                        print('ratelimit')
-                        sleep(1)
+                        self.add_fullname_to_old_fullnames_file(fullname)
+                        print('link name does not contain correct string')
+                        sleep(2)
                 else:
                     return
 
     def add_fullname_to_old_fullnames_file(self, fullname):
-        """Prints link fullnames of current loop cycle to a file"""
+        """Writes link fullnames of current loop cycle to a file"""
 
         with open("fullnames.txt", "a") as fullnames_file:
             fullnames_file.write(fullname + '\n')
